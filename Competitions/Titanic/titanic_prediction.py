@@ -81,7 +81,7 @@ def getFeatures(df):
       return features , labels
 
 
-def evaluateModel(model , model_nm , x , y):
+def evaluateModel(model , model_nm , x , y , test):
 
       '''
 
@@ -101,6 +101,8 @@ def evaluateModel(model , model_nm , x , y):
       # Prdict on the test data
       y_pred = model.predict(x_test)
 
+      #print(y_pred)
+
       # Get the accuracy
       acc = np.mean(y_pred == y_test)
       sk_acc = metrics.accuracy_score(y_test, y_pred)
@@ -117,6 +119,32 @@ def evaluateModel(model , model_nm , x , y):
       print('================================================')
       print()
 
+
+      # predict the test file
+      if model_nm == 'Random Forest':
+            survived_pred = model.predict(test)
+            survived_pred = list(map(int , survived_pred.tolist()))
+
+            survived_df = pd.DataFrame(survived_pred , columns = ['Survived'])
+
+            #print(len(survived_pred) , type(survived_pred))
+            #print(survived_df)
+
+            #print(test['PassengerId'])
+
+            test['Survived'] = survived_df.values
+
+            #result_df = pd.concat([test['PassengerId'] , survived_df] , ignore_index = True , axis = 1)
+
+            print(test.columns.tolist())
+
+            print(test[['PassengerId' , 'Survived']])
+
+            # Save to csv
+            test[['PassengerId' , 'Survived']].to_csv('titanic_result.csv', index = False)
+
+      return y_pred
+
       
 
 def SKModels(total_df):
@@ -129,6 +157,12 @@ def SKModels(total_df):
       '''
 
       df_train , df_test = splitDataSets(total_df , train_l)
+
+
+      # Drop 'Name' from test
+      df_test = df_test.drop(columns = ['Name' , 'Ticket'] , axis = 1)
+
+      print('Test Columns: ' , df_test.columns.tolist())
 
       # Seperate the Features from the target class variable
       x_df, y_labels = getFeatures(df_train)
@@ -149,10 +183,14 @@ def SKModels(total_df):
       rand_forest = RandomForestClassifier(n_estimators  = 100)
 
       # Evaluate the model
-      evaluateModel(gauss_NB , 'Naive Bayes' , x_df , y_labels)
-      evaluateModel(log_reg , 'Logistic Regression' , x_df , y_labels)
-      evaluateModel(dec_tree , 'Decision Tree' , x_df , y_labels)
-      evaluateModel(rand_forest , 'Random Forest' , x_df , y_labels)
+      nb_pred = evaluateModel(gauss_NB , 'Naive Bayes' , x_df , y_labels , df_test)
+      log_reg_pred = evaluateModel(log_reg , 'Logistic Regression' , x_df , y_labels, df_test)
+      dec_tree_pred = evaluateModel(dec_tree , 'Decision Tree' , x_df , y_labels , df_test)
+      rand_for_pred = evaluateModel(rand_forest , 'Random Forest' , x_df , y_labels , df_test)
+
+      # Predict for the test file
+      
+      
 
 
 if __name__ == '__main__':
